@@ -1,10 +1,148 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>My First Website</title>
+<meta charset="UTF-8">
+<title>Flappy Bird</title>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        background: #70c5ce;
+        font-family: Arial;
+    }
+
+    #gameCanvas {
+        background: #4ec0ca;
+        display: block;
+        margin: auto;
+    }
+
+    #message {
+        position: absolute;
+        top: 20px;
+        width: 100%;
+        text-align: center;
+        color: white;
+        font-size: 30px;
+        text-shadow: 2px 2px 4px #000;
+    }
+</style>
 </head>
 <body>
-    <h1>Hello! This is my first website!</h1>
-    <p>I made it with GitHub Pages.</p>
+
+<div id="message">Click or press SPACE to start</div>
+<canvas id="gameCanvas" width="350" height="500"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let birdX = 50;
+let birdY = canvas.height / 2;
+let gravity = 0.4;
+let velocity = 0;
+let jump = -8;
+
+let pipes = [];
+let gameStarted = false;
+let score = 0;
+
+// Create pipes
+function newPipe() {
+    let gap = 120;
+    let top = Math.random() * (canvas.height - gap - 50);
+    pipes.push({
+        x: canvas.width,
+        topHeight: top,
+        bottomY: top + gap,
+        width: 50
+    });
+}
+
+// Handle jump
+function flap() {
+    if (!gameStarted) {
+        gameStarted = true;
+        document.getElementById("message").innerHTML = "";
+    }
+    velocity = jump;
+}
+
+document.addEventListener("keydown", (e) => {
+    if (e.code === "Space") flap();
+});
+
+document.addEventListener("mousedown", flap);
+
+// Game loop
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Bird
+    velocity += gravity;
+    birdY += velocity;
+
+    ctx.fillStyle = "yellow";
+    ctx.beginPath();
+    ctx.arc(birdX, birdY, 12, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Pipes
+    if (gameStarted && pipes.length < 3) {
+        newPipe();
+    }
+
+    pipes.forEach((pipe, i) => {
+        pipe.x -= 2;
+
+        // Top pipe
+        ctx.fillStyle = "green";
+        ctx.fillRect(pipe.x, 0, pipe.width, pipe.topHeight);
+
+        // Bottom pipe
+        ctx.fillRect(pipe.x, pipe.bottomY, pipe.width, canvas.height - pipe.bottomY);
+
+        // Remove off-screen pipes
+        if (pipe.x + pipe.width < 0) {
+            pipes.splice(i, 1);
+            score++;
+        }
+
+        // Collision detection
+        if (
+            birdX + 12 > pipe.x &&
+            birdX - 12 < pipe.x + pipe.width &&
+            (birdY - 12 < pipe.topHeight || birdY + 12 > pipe.bottomY)
+        ) {
+            resetGame();
+        }
+    });
+
+    // Bird hits ground or ceiling
+    if (birdY + 12 > canvas.height || birdY - 12 < 0) {
+        resetGame();
+    }
+
+    // Score display
+    ctx.fillStyle = "white";
+    ctx.font = "24px Arial";
+    ctx.fillText("Score: " + score, 10, 30);
+
+    requestAnimationFrame(gameLoop);
+}
+
+function resetGame() {
+    birdY = canvas.height / 2;
+    velocity = 0;
+    pipes = [];
+    score = 0;
+    gameStarted = false;
+    document.getElementById("message").innerHTML = "Click or press SPACE to start";
+}
+
+gameLoop();
+</script>
+
 </body>
 </html>
+
